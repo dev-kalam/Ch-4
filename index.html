@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Financial Calculator</title>
+    <style>
+        body {
+            background-color: #121212;
+            color: #e0e0e0;
+            font-family: 'Poppins', sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 40px;
+        }
+        .menu, .form, .steps {
+            background-color: #1e1e1e;
+            padding: 30px;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 600px;
+            margin: 20px 0;
+            box-shadow: 0 0 15px rgba(0, 255, 255, 0.2);
+            animation: fadeIn 1s ease-in;
+        }
+        button {
+            background-color: #00bcd4;
+            border: none;
+            color: #fff;
+            padding: 12px 25px;
+            margin-top: 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #0097a7;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: none;
+            border-radius: 6px;
+            background-color: #333;
+            color: #fff;
+        }
+        .hidden {
+            display: none;
+        }
+        @keyframes fadeIn {
+            from {opacity: 0;}
+            to {opacity: 1;}
+        }
+        .step-text {
+            margin: 15px 0;
+            font-size: 18px;
+            opacity: 0;
+            animation: fadeIn 1s forwards;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <div id="menu" class="menu">
+        <h1>Financial Calculator</h1>
+        <button onclick="selectOption('fv')">Future Value (FV)</button><br><br>
+        <button onclick="selectOption('pv')">Present Value (PV)</button><br><br>
+        <button onclick="selectOption('ear')">Effective Annual Rate (EAR)</button><br><br>
+    </div>
+
+    <div id="form" class="form hidden">
+        <h2 id="form-title">Form</h2>
+        <div id="form-fields"></div>
+        <button onclick="startCalculation()">Calculate</button>
+    </div>
+
+    <div id="steps" class="steps hidden">
+        <h2>Calculation Steps</h2>
+        <div id="step-output"></div>
+        <button onclick="goHome()">Back to Menu</button>
+    </div>
+
+</div>
+
+<script>
+    let selectedOption = "";
+
+    function selectOption(option) {
+        selectedOption = option;
+        document.getElementById("menu").classList.add("hidden");
+        document.getElementById("form").classList.remove("hidden");
+
+        let fields = "";
+        if (option === "fv" || option === "pv") {
+            fields += `
+                <input type="number" id="value" placeholder="${option === 'fv' ? 'Present Value' : 'Future Value'}" required>
+                <input type="number" id="rate" placeholder="Interest Rate (%)" required>
+                <input type="number" id="time" placeholder="Time (Years)" required>
+            `;
+        } else if (option === "ear") {
+            fields += `
+                <input type="number" id="rate" placeholder="Interest Rate (%)" required>
+                <input type="number" id="m" placeholder="Compounding Frequency per Year (m)" required>
+            `;
+        }
+        document.getElementById("form-fields").innerHTML = fields;
+        document.getElementById("form-title").innerText = "Enter Details";
+    }
+
+    function startCalculation() {
+        document.getElementById("form").classList.add("hidden");
+        document.getElementById("steps").classList.remove("hidden");
+
+        let outputDiv = document.getElementById("step-output");
+        outputDiv.innerHTML = "";
+
+        if (selectedOption === "fv") {
+            let p = parseFloat(document.getElementById("value").value);
+            let i = parseFloat(document.getElementById("rate").value);
+            let n = parseInt(document.getElementById("time").value);
+
+            let I = i / 100;
+            let a = Math.pow((1 + I), n);
+            let F = p * a;
+
+            let steps = [
+                `Step 1: Convert interest rate: I = ${i} / 100 = ${I}`,
+                `Step 2: Calculate (1 + I)^n: (1 + ${I})^${n} = ${a.toFixed(4)}`,
+                `Step 3: Multiply Present Value with (1 + I)^n: ${p} × ${a.toFixed(4)} = ${F.toFixed(2)}`,
+                `Final Answer: Future Value (FV) = ${F.toFixed(2)}`
+            ];
+
+            showSteps(steps);
+        }
+
+        else if (selectedOption === "pv") {
+            let f = parseFloat(document.getElementById("value").value);
+            let i = parseFloat(document.getElementById("rate").value);
+            let n = parseInt(document.getElementById("time").value);
+
+            let I = i / 100;
+            let a = Math.pow((1 + I), n);
+            let P = f / a;
+
+            let steps = [
+                `Step 1: Convert interest rate: I = ${i} / 100 = ${I}`,
+                `Step 2: Calculate (1 + I)^n: (1 + ${I})^${n} = ${a.toFixed(4)}`,
+                `Step 3: Divide Future Value by (1 + I)^n: ${f} / ${a.toFixed(4)} = ${P.toFixed(2)}`,
+                `Final Answer: Present Value (PV) = ${P.toFixed(2)}`
+            ];
+
+            showSteps(steps);
+        }
+
+        else if (selectedOption === "ear") {
+            let i = parseFloat(document.getElementById("rate").value);
+            let m = parseInt(document.getElementById("m").value);
+
+            let I = i / 100;
+            let a = Math.pow((1 + I / m), m);
+            let EAR = (a - 1) * 100;
+
+            let steps = [
+                `Step 1: Convert interest rate: I = ${i} / 100 = ${I}`,
+                `Step 2: Calculate (1 + I/m)^m: (1 + ${I}/${m})^${m} = ${a.toFixed(4)}`,
+                `Step 3: Subtract 1 and multiply by 100: (${a.toFixed(4)} - 1) × 100 = ${EAR.toFixed(2)}%`,
+                `Final Answer: Effective Annual Rate (EAR) = ${EAR.toFixed(2)}%`
+            ];
+
+            showSteps(steps);
+        }
+    }
+
+    function showSteps(steps) {
+        let outputDiv = document.getElementById("step-output");
+        let index = 0;
+
+        function displayNextStep() {
+            if (index < steps.length) {
+                let step = document.createElement("div");
+                step.className = "step-text";
+                step.style.animationDelay = (index * 1) + "s";
+                step.innerHTML = steps[index];
+                outputDiv.appendChild(step);
+                index++;
+                setTimeout(displayNextStep, 1500); // 1.5 seconds between steps
+            }
+        }
+
+        displayNextStep();
+    }
+
+    function goHome() {
+        document.getElementById("steps").classList.add("hidden");
+        document.getElementById("menu").classList.remove("hidden");
+    }
+</script>
+
+</body>
+</html>
