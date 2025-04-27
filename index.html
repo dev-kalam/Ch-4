@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Financial Calculator</title>
+    <title>Advanced Financial Calculator</title>
     <style>
         body {
             background-color: #121212;
@@ -17,7 +17,7 @@
             align-items: center;
             padding: 40px;
         }
-        .menu, .form, .steps {
+        .menu, .form, .steps, .submenu {
             background-color: #1e1e1e;
             padding: 30px;
             border-radius: 10px;
@@ -32,13 +32,20 @@
             border: none;
             color: #fff;
             padding: 12px 25px;
-            margin-top: 20px;
+            margin: 10px 5px;
             border-radius: 6px;
             cursor: pointer;
             font-size: 16px;
+            transition: background-color 0.3s;
         }
         button:hover {
             background-color: #0097a7;
+        }
+        button.secondary {
+            background-color: #333;
+        }
+        button.secondary:hover {
+            background-color: #444;
         }
         input {
             width: 100%;
@@ -62,146 +69,282 @@
             opacity: 0;
             animation: fadeIn 1s forwards;
         }
+        .result {
+            font-size: 24px;
+            color: #00bcd4;
+            margin: 20px 0;
+            text-align: center;
+        }
     </style>
 </head>
 <body>
 
 <div class="container">
-
     <div id="menu" class="menu">
         <h1>Financial Calculator</h1>
         <button onclick="selectOption('fv')">Future Value (FV)</button><br><br>
         <button onclick="selectOption('pv')">Present Value (PV)</button><br><br>
         <button onclick="selectOption('ear')">Effective Annual Rate (EAR)</button><br><br>
+        <button onclick="exitApp()" class="secondary">Exit</button>
+    </div>
+
+    <div id="submenu" class="submenu hidden">
+        <h2 id="submenu-title">Select Calculation Type</h2>
+        <div id="submenu-buttons"></div>
+        <button onclick="goBack()" class="secondary">Back</button>
     </div>
 
     <div id="form" class="form hidden">
         <h2 id="form-title">Form</h2>
         <div id="form-fields"></div>
-        <button onclick="startCalculation()">Calculate</button>
+        <button onclick="calculate()">Calculate</button>
+        <button onclick="goBack()" class="secondary">Back</button>
     </div>
 
     <div id="steps" class="steps hidden">
-        <h2>Calculation Steps</h2>
+        <h2>Calculation Result</h2>
         <div id="step-output"></div>
+        <div id="final-result" class="result"></div>
         <button onclick="goHome()">Back to Menu</button>
     </div>
-
 </div>
 
 <script>
-    let selectedOption = "";
+    let currentOption = "";
+    let currentSubOption = "";
 
     function selectOption(option) {
-        selectedOption = option;
+        currentOption = option;
         document.getElementById("menu").classList.add("hidden");
-        document.getElementById("form").classList.remove("hidden");
-
-        let fields = "";
+        
         if (option === "fv" || option === "pv") {
-            fields += `
-                <input type="number" id="value" placeholder="${option === 'fv' ? 'Present Value' : 'Future Value'}" required>
-                <input type="number" id="rate" placeholder="Interest Rate (%)" required>
-                <input type="number" id="time" placeholder="Time (Years)" required>
-            `;
-        } else if (option === "ear") {
-            fields += `
-                <input type="number" id="rate" placeholder="Interest Rate (%)" required>
-                <input type="number" id="m" placeholder="Compounding Frequency per Year (m)" required>
-            `;
+            showSubmenu(option);
+        } else {
+            showForm(option);
         }
-        document.getElementById("form-fields").innerHTML = fields;
-        document.getElementById("form-title").innerText = "Enter Details";
     }
 
-    function startCalculation() {
+    function showSubmenu(option) {
+        const submenu = document.getElementById("submenu");
+        const buttonsDiv = document.getElementById("submenu-buttons");
+        
+        if (option === "fv") {
+            document.getElementById("submenu-title").textContent = "Future Value Calculation";
+            buttonsDiv.innerHTML = `
+                <button onclick="selectSubOption('fv', 'normal')">Normal FV</button>
+                <button onclick="selectSubOption('fv', 'advance')">Advanced FV</button>
+            `;
+        } else if (option === "pv") {
+            document.getElementById("submenu-title").textContent = "Present Value Calculation";
+            buttonsDiv.innerHTML = `
+                <button onclick="selectSubOption('pv', 'normal')">Normal PV</button>
+                <button onclick="selectSubOption('pv', 'advance')">Advanced PV</button>
+            `;
+        }
+        
+        submenu.classList.remove("hidden");
+    }
+
+    function selectSubOption(option, subOption) {
+        currentSubOption = subOption;
+        document.getElementById("submenu").classList.add("hidden");
+        showForm(option);
+    }
+
+    function showForm(option) {
+        const form = document.getElementById("form");
+        const fieldsDiv = document.getElementById("form-fields");
+        
+        let fields = "";
+        if (option === "fv") {
+            if (currentSubOption === "normal") {
+                document.getElementById("form-title").textContent = "Normal Future Value Calculation";
+                fields = `
+                    <input type="number" id="presentValue" placeholder="Present Value" required>
+                    <input type="number" id="interestRate" placeholder="Interest Rate (%)" required>
+                    <input type="number" id="time" placeholder="Time (Years)" required>
+                `;
+            } else {
+                document.getElementById("form-title").textContent = "Advanced Future Value Calculation";
+                fields = `
+                    <input type="number" id="presentValue" placeholder="Present Value" required>
+                    <input type="number" id="interestRate" placeholder="Interest Rate (%)" required>
+                    <input type="number" id="time" placeholder="Time (Years)" required>
+                    <input type="number" id="compounding" placeholder="Compounding Frequency (m)" required>
+                `;
+            }
+        } else if (option === "pv") {
+            if (currentSubOption === "normal") {
+                document.getElementById("form-title").textContent = "Normal Present Value Calculation";
+                fields = `
+                    <input type="number" id="futureValue" placeholder="Future Value" required>
+                    <input type="number" id="interestRate" placeholder="Interest Rate (%)" required>
+                    <input type="number" id="time" placeholder="Time (Years)" required>
+                `;
+            } else {
+                document.getElementById("form-title").textContent = "Advanced Present Value Calculation";
+                fields = `
+                    <input type="number" id="futureValue" placeholder="Future Value" required>
+                    <input type="number" id="interestRate" placeholder="Interest Rate (%)" required>
+                    <input type="number" id="time" placeholder="Time (Years)" required>
+                    <input type="number" id="compounding" placeholder="Compounding Frequency (m)" required>
+                `;
+            }
+        } else if (option === "ear") {
+            document.getElementById("form-title").textContent = "Effective Annual Rate Calculation";
+            fields = `
+                <input type="number" id="interestRate" placeholder="Interest Rate (%)" required>
+                <input type="number" id="compounding" placeholder="Compounding Frequency (m)" required>
+            `;
+        }
+        
+        fieldsDiv.innerHTML = fields;
+        form.classList.remove("hidden");
+    }
+
+function calculate() {
         document.getElementById("form").classList.add("hidden");
         document.getElementById("steps").classList.remove("hidden");
-
-        let outputDiv = document.getElementById("step-output");
+        
+        const outputDiv = document.getElementById("step-output");
+        const resultDiv = document.getElementById("final-result");
         outputDiv.innerHTML = "";
+        resultDiv.innerHTML = "";
 
-        if (selectedOption === "fv") {
-            let p = parseFloat(document.getElementById("value").value);
-            let i = parseFloat(document.getElementById("rate").value);
-            let n = parseInt(document.getElementById("time").value);
+        let steps = [];
+        let result = "";
 
-            let I = i / 100;
-            let a = Math.pow((1 + I), n);
-            let F = p * a;
-
-            let steps = [
-                `Step 1: Convert interest rate: I = ${i} / 100 = ${I}`,
-                `Step 2: Calculate (1 + I)^n: (1 + ${I})^${n} = ${a.toFixed(4)}`,
-                `Step 3: Multiply Present Value with (1 + I)^n: ${p} × ${a.toFixed(4)} = ${F.toFixed(2)}`,
-                `Final Answer: Future Value (FV) = ${F.toFixed(2)}`
+        if (currentOption === "fv") {
+            const p = parseFloat(document.getElementById("presentValue").value);
+            const i = parseFloat(document.getElementById("interestRate").value);
+            const n = parseFloat(document.getElementById("time").value);
+            
+            if (currentSubOption === "normal") {
+                const I = i / 100;
+                const a = Math.pow((1 + I), n);
+                const F = p * a;
+                
+                steps = [
+                    `Step 1: Convert interest rate: I = ${i}% / 100 = ${I}`,
+                    `Step 2: Calculate (1 + I)^n: (1 + ${I})^${n} = ${a.toFixed(6)}`,
+                    `Step 3: Multiply Present Value with growth factor: ${p} × ${a.toFixed(6)} = ${F.toFixed(2)}`
+                ];
+                result = `Future Value: ${F.toFixed(2)}`;
+            } else {
+                const m = parseFloat(document.getElementById("compounding").value);
+                const I = i / 100;
+                const a = Math.pow((1 + I / m), n * m);
+                const F = p * a;
+                
+                steps = [
+                    `Step 1: Convert interest rate: I = ${i}% / 100 = ${I}`,
+                    `Step 2: Calculate periodic rate: I/m = ${I}/${m} = ${(I/m).toFixed(6)}`,
+                    `Step 3: Calculate compounding periods: n×m = ${n}×${m} = ${n*m}`,
+                    `Step 4: Calculate growth factor: (1 + ${(I/m).toFixed(6)})^${n*m} = ${a.toFixed(6)}`,
+                    `Step 5: Multiply Present Value with growth factor: ${p} × ${a.toFixed(6)} = ${F.toFixed(2)}`
+                ];
+                result = `Future Value: ${F.toFixed(2)}`;
+            }
+        } 
+        else if (currentOption === "pv") {
+            const f = parseFloat(document.getElementById("futureValue").value);
+            const i = parseFloat(document.getElementById("interestRate").value);
+            const n = parseFloat(document.getElementById("time").value);
+            
+            if (currentSubOption === "normal") {
+                const I = i / 100;
+                const a = Math.pow((1 + I), n);
+                const P = f / a;
+                
+                steps = [
+                    `Step 1: Convert interest rate: I = ${i}% / 100 = ${I}`,
+                    `Step 2: Calculate (1 + I)^n: (1 + ${I})^${n} = ${a.toFixed(6)}`,
+                    `Step 3: Divide Future Value by growth factor: ${f} / ${a.toFixed(6)} = ${P.toFixed(2)}`
+                ];
+                result = `Present Value: ${P.toFixed(2)}`;
+            } else {
+                const m = parseFloat(document.getElementById("compounding").value);
+                const I = i / 100;
+                const a = Math.pow((1 + I / m), n * m);
+                const P = f / a;
+                
+                steps = [
+                    `Step 1: Convert interest rate: I = ${i}% / 100 = ${I}`,
+                    `Step 2: Calculate periodic rate: I/m = ${I}/${m} = ${(I/m).toFixed(6)}`,
+                    `Step 3: Calculate compounding periods: n×m = ${n}×${m} = ${n*m}`,
+                    `Step 4: Calculate growth factor: (1 + ${(I/m).toFixed(6)})^${n*m} = ${a.toFixed(6)}`,
+                    `Step 5: Divide Future Value by growth factor: ${f} / ${a.toFixed(6)} = ${P.toFixed(2)}`
+                ];
+                result = `Present Value: ${P.toFixed(2)}`;
+            }
+        } 
+        else if (currentOption === "ear") {
+            const i = parseFloat(document.getElementById("interestRate").value);
+            const m = parseFloat(document.getElementById("compounding").value);
+            const I = i / 100;
+            const a = Math.pow((1 + I / m), m);
+            const EAR = (a - 1) * 100;
+            
+            steps = [
+                `Step 1: Convert interest rate: I = ${i}% / 100 = ${I}`,
+                `Step 2: Calculate periodic rate: I/m = ${I}/${m} = ${(I/m).toFixed(6)}`,
+                `Step 3: Calculate growth factor: (1 + ${(I/m).toFixed(6)})^${m} = ${a.toFixed(6)}`,
+                `Step 4: Convert to percentage: (${a.toFixed(6)} - 1) × 100 = ${EAR.toFixed(2)}%`
             ];
-
-            showSteps(steps);
+            result = `Effective Annual Rate: ${EAR.toFixed(2)}%`;
         }
 
-        else if (selectedOption === "pv") {
-            let f = parseFloat(document.getElementById("value").value);
-            let i = parseFloat(document.getElementById("rate").value);
-            let n = parseInt(document.getElementById("time").value);
-
-            let I = i / 100;
-            let a = Math.pow((1 + I), n);
-            let P = f / a;
-
-            let steps = [
-                `Step 1: Convert interest rate: I = ${i} / 100 = ${I}`,
-                `Step 2: Calculate (1 + I)^n: (1 + ${I})^${n} = ${a.toFixed(4)}`,
-                `Step 3: Divide Future Value by (1 + I)^n: ${f} / ${a.toFixed(4)} = ${P.toFixed(2)}`,
-                `Final Answer: Present Value (PV) = ${P.toFixed(2)}`
-            ];
-
-            showSteps(steps);
-        }
-
-        else if (selectedOption === "ear") {
-            let i = parseFloat(document.getElementById("rate").value);
-            let m = parseInt(document.getElementById("m").value);
-
-            let I = i / 100;
-            let a = Math.pow((1 + I / m), m);
-            let EAR = (a - 1) * 100;
-
-            let steps = [
-                `Step 1: Convert interest rate: I = ${i} / 100 = ${I}`,
-                `Step 2: Calculate (1 + I/m)^m: (1 + ${I}/${m})^${m} = ${a.toFixed(4)}`,
-                `Step 3: Subtract 1 and multiply by 100: (${a.toFixed(4)} - 1) × 100 = ${EAR.toFixed(2)}%`,
-                `Final Answer: Effective Annual Rate (EAR) = ${EAR.toFixed(2)}%`
-            ];
-
-            showSteps(steps);
-        }
+        displaySteps(steps, result);
     }
 
-    function showSteps(steps) {
-        let outputDiv = document.getElementById("step-output");
-        let index = 0;
+    function displaySteps(steps, result) {
+        const outputDiv = document.getElementById("step-output");
+        const resultDiv = document.getElementById("final-result");
+        
+        steps.forEach((step, index) => {
+            setTimeout(() => {
+                const stepElement = document.createElement("div");
+                stepElement.className = "step-text";
+                stepElement.textContent = step;
+                outputDiv.appendChild(stepElement);
+                
+                if (index === steps.length - 1) {
+                    setTimeout(() => {
+                        resultDiv.textContent = result;
+                    }, 500);
+                }
+            }, index * 1000);
+        });
+    }
 
-        function displayNextStep() {
-            if (index < steps.length) {
-                let step = document.createElement("div");
-                step.className = "step-text";
-                step.style.animationDelay = (index * 1) + "s";
-                step.innerHTML = steps[index];
-                outputDiv.appendChild(step);
-                index++;
-                setTimeout(displayNextStep, 1500); // 1.5 seconds between steps
+    function goBack() {
+        if (document.getElementById("submenu").classList.contains("hidden")) {
+            // If submenu is hidden, we're in form - go back to submenu or main menu
+            if (currentOption === "ear") {
+                document.getElementById("form").classList.add("hidden");
+                document.getElementById("menu").classList.remove("hidden");
+            } else {
+                document.getElementById("form").classList.add("hidden");
+                document.getElementById("submenu").classList.remove("hidden");
             }
+        } else {
+            // If submenu is visible, go back to main menu
+            document.getElementById("submenu").classList.add("hidden");
+            document.getElementById("menu").classList.remove("hidden");
         }
-
-        displayNextStep();
     }
 
     function goHome() {
         document.getElementById("steps").classList.add("hidden");
         document.getElementById("menu").classList.remove("hidden");
+        currentOption = "";
+        currentSubOption = "";
+    }
+
+    function exitApp() {
+        // In a real web app, this might close the window/tab
+        alert("Thank you for using the Financial Calculator!");
     }
 </script>
-
 </body>
 </html>
